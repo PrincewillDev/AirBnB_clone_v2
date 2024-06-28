@@ -1,4 +1,4 @@
--- Setup MySQL server for project: create hbnb_dev_db, hbnb_dev user, and grant privileges
+-- Setup MySQL server for project(For Development)
 
 CREATE DATABASE IF NOT EXISTS hbnb_dev_db;
 
