@@ -4,21 +4,21 @@
 # Install Nginx if it is not already installed
 echo "Checking if nginx exists and is running..."
 if ! sudo service nginx status; then
-	echo "Installing, nginx..."
-	sudo apt -y update
-	sudo apt -y install nginx
-	sudo service nginx start
+        echo "Installing, nginx..."
+        sudo apt -y update
+        sudo apt -y install nginx
+        sudo service nginx start
 fi
 
 # Create function that creates a specified directory if it doesn't exist
 create_dir() {
-	local dir="$1"
-	if [ ! -d "$dir" ]; then
-		echo "Creating $dir directory..."
-		sudo mkdir "$dir"
-	else
-		echo "Directory $dir already exists."
-	fi
+        local dir="$1"
+        if [ ! -d "$dir" ]; then
+                echo "Creating $dir directory..."
+                sudo mkdir "$dir"
+        else
+                echo "Directory $dir already exists."
+        fi
 }
 
 # Create variables for files/dir that will be reused
@@ -34,16 +34,16 @@ create_dir "$test_dir"
 
 # Create a fake HTML file to be served
 if [ ! -f "$test_dir/index.html" ]; then
-	echo "Creating fake html file..."
-	echo "Holberton School" > "$test_dir/index.html"
+        echo "Creating fake html file..."
+        echo "Holberton School" > "$test_dir/index.html"
 else
-	echo "Fake html file ($test_dir/index.html) already exists."
+        echo "Fake html file ($test_dir/index.html) already exists."
 fi
 
 # Create a symbolic link to /data/web_static/releases/test/ directory
 if [ -L "$current_sym_link" ]; then
-	echo "Deleting symbolink link..."
-	sudo rm "$current_sym_link"
+        echo "Deleting symbolink link..."
+        sudo rm "$current_sym_link"
 fi
 echo "Creating symbolic link..."
 sudo ln -s "$test_dir/" "$current_sym_link"
