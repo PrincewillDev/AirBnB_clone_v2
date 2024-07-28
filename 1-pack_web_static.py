@@ -8,6 +8,7 @@ from datetime import datetime
 from time import strftime
 import os
 
+
 def do_pack():
     """ A script that generates archive the contents of web_static folder"""
 
