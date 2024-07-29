@@ -1,55 +1,114 @@
-#!/usr/bin/python3
 """
-This script that creates and distributes an archive to web server
+This module contains a function that creates and distributes an archive to web
+servers.
 """
-from fabric.api import local, env, put, run
+from fabric.api import *
 from datetime import datetime
-from os.path import exists, isdir
-env.hosts = ['54.157.167.250', '18.234.105.180']
+import os
+
+# Specify host information
+env.hosts = ['54.157.167.250', '18.234.105.180'] 
 
 
 def do_pack():
-    """Generates a .tgz archive
+    """ Generates a .tgz archive from a specified folder
+    Args:
+        None
+    Return:
+        (str): Archive name if success, else None
     """
-    if isdir("versions") is False:
-        local("mkdir -p versions")
-    date = datetime.now().strftime("%Y%m%d%H%M%S")
-    file_path = "versions/web_static_{}.tgz".format(date)
-    local("tar -cvzf {} web_static".format(file_path))
-    if exists(file_path):
-        return file_path
-    return None
+    # Specify source and destination folders
+    src = "web_static"
+    dest = "versions"
+
+    # Get current datetime
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+
+    # Specify path to archive
+    path_to_archive = f"{dest}/{src}_{timestamp}.tgz"
+
+    # Create destination folder if it doesn't exist
+    local(f'if [ ! -d {dest} ]; then mkdir {dest}; fi')
+
+    # Run command
+    result = local(f'tar -czvf {path_to_archive} {src}')
+    if result.succeeded:
+        return path_to_archive
+    else:
+        return None
 
 
 def do_deploy(archive_path):
-    """Distributes an archive to your web servers
+    """ Distributes an archive to some web servers
+    Args:
+        archive_path: Path to archive to be distributed on servers
+    Return:
+        (bool): True if all operations have been done correctly, else False.
     """
-    if exists(archive_path) is False:
+    # If file at path archive_path does not exist, return False
+    if not os.path.exists(archive_path):
+        print(f'Path {archive_path} does not exist')
         return False
-    try:
-        put(archive_path, "/tmp/")
-        filename = archive_path.split("/")[-1]
-        foldername = filename.split(".")[0]
-        run("mkdir -p /data/web_static/releases/{}".format(foldername))
-        run("tar -xzf /tmp/{} -C /data/web_static/releases/{}".format
-            (filename, foldername))
-        run("rm /tmp/{}".format(filename))
-        run("mv /data/web_static/releases/{}/web_static/* \
-            /data/web_static/releases/{}/".format(foldername, foldername))
-        run("rm -rf /data/web_static/releases/{}/web_static"
-            .format(foldername))
-        run("rm -rf /data/web_static/current")
-        run("ln -s /data/web_static/releases/{} /data/web_static/current"
-            .format(foldername))
-        return True
-    except Exception as e:
-        return False
+
+    # Upload the archive to /tmp/ directory of web servers
+    remote_archive_path = put(archive_path, '/tmp/')[0]
+
+    # Define relevant variables
+    archive_name = remote_archive_path.split('/')[-1].split('.')[0]
+    dest_folder = "/data/web_static/releases"
+    path_to_decomp_archive = f'{dest_folder}/{archive_name}'
+    symlink_to_curr_release = "/data/web_static/current"
+
+    # Create dest_folder if it doesn't exist
+    run(f'if [ -d {dest_folder} ]; then mkdir -p {dest_folder}; fi')
+
+    # Uncompress archive to destination folder on web server
+    run(f'tar -xzf {remote_archive_path} -C {dest_folder}')
+
+    # Rename decompressed folder with respect to version name
+    run(f'mv {dest_folder}/web_static {path_to_decomp_archive}')
+    # run(f'rm -rf {path_to_decomp_archive}/web_static')
+
+    # Remove archive from web server
+    run(f'sudo rm {remote_archive_path}')
+
+    # Delete symbolic link $symlink from server
+    run(f'sudo rm {symlink_to_curr_release}')
+
+    # Create new symbolic link to new version of code
+    run(f'sudo ln -s {path_to_decomp_archive}/ {symlink_to_curr_release}')
+
+    # Restart nginx
+    run('sudo service nginx restart')
+
+    # Return True if all operations exited successfully
+    print('New version deployed!')
+    return True
 
 
 def deploy():
-    """Creates and distributes an archive to your web servers
+    """Creates and distributes an archive to web servers
+    Args:
+        None
+    Return:
+        (bool): True on success, otherwise, fail
     """
-    archive_path = do_pack()
+    # Pack web_static
+    try:
+        archive_path = do_pack()
+    except Exception as e:
+        print(str(e))
+        return False
+
+    # Return False if no archive was created
     if archive_path is None:
         return False
-    return do_deploy(archive_path)
+
+    # Deploy archive
+    deployment_status = do_deploy(archive_path)
+    return deployment_status
+
+
+if __name__ == '__main__':
+    deploy()
+
