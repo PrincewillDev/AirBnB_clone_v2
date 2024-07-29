@@ -2,13 +2,10 @@
 """
 This script deploys a new version of web static
 """
+from fabric.api import *
 from os import os.path
 from datetime import datetime
-from fabric.api import env
-from fabric.api import local
-from fabric.api import put
-from fabric.api import run
- 
+
 env.hosts = ['54.157.167.250', '18.234.105.180']
 
 
