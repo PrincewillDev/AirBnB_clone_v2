@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 """
 This module contains a function that creates and distributes an archive to web
 servers.
