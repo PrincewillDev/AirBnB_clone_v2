@@ -1,5 +1,7 @@
 #!/usr/bin/python3
-"""This script deploys a new version of web static"""
+"""
+This script deploys a new version of web static
+"""
 from os import os.path
 from datetime import datetime
 from fabric.api import env
